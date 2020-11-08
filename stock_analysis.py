@@ -37,7 +37,6 @@ class StockPredictor:
         self._split_train_test_data(test_size)
         self._compute_all_possible_outcomes(
             n_intervals_frac_change, n_intervals_frac_high, n_intervals_frac_low)
-        self.days = 0
 
     def _init_logger(self):
         self._logger = logging.getLogger(__name__)
@@ -125,17 +124,19 @@ class StockPredictor:
             day_index)
         return open_price * (1 + predicted_frac_change)
 
-    def predict_close_prices_for_period(self, days):
+    def predict_close_prices_for_period(self):
         #  Store all the predicted close prices
         predicted_close_prices = []
-        for day_index in tqdm(range(days)):
+        print(self.days)
+        for day_index in tqdm(range(self.days)):
             predicted_close_prices.append(self.predict_close_price(day_index))
         return predicted_close_prices
 
-    def actual_close_prices(self):
+    def real_close_prices(self):
         #  Store all the actual close prices
         actual_close_prices = self._test_data['Close']
         return actual_close_prices
+
 
     # TODO: Add visualisation of results 
 
@@ -162,13 +163,18 @@ def main():
     arg_parser.add_argument("-e", "--end_date", required=True, type=str,
                             help="Takes in the end date of the time period being evaluated. Please input dates in the"
                                  "following way: 'year-month-day'")
+    arg_parser.add_argument("-o", "--out_dir", required=True, type=str,
+                            help="Directory to save the CSV file that contains the actual stock prices along with the "
+                                 "predictions for a given day.")
     args = arg_parser.parse_args()
+
+    #C:/Users/Sean/Desktop
 
     # Set variables from arguments
     company_name = args.stock_name
     start = args.start_date
     end = args.end_date
-
+    out = args.out_dir
     # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
     if company_name[0] == '\'' and company_name[-1] == '\'':
         company_name = company_name[1:-1]
@@ -188,6 +194,15 @@ def main():
     # Fit the HMM
     stock_predictor.fit()
 
+    # Get the predicted stock prices
+    predicted_close = stock_predictor.predict_close_prices_for_period()
+
+    # Get the actual stock prices
+    actual_close = stock_predictor.real_close_prices()
+
+    # Save output to CSV as well as specific metrics
+    # TODO: add csv creation and scoring metrics (MAPE etc)
+
     start_date = '2017-01-01'  # change the dates here as desired
     end_date = '2020-01-01'
 
@@ -201,8 +216,8 @@ print("hi")
 # print(real_close_values)
 # predicted_close_values = pd.DataFrame(predicted_close)
 # print(predicted_close_values)
-# predicted_close_values.to_excel(r'C:\Users\Sean\Desktop\StudioCodePython\disneypredicted.xlsx', index=False)
-# real_close_values.to_excel(r'C:\Users\Sean\Desktop\StudioCodePython\disneyactual.xlsx', index=False)
+# predicted_close_values.to_excel(r'C:\Users\\disneypredicted.xlsx', index=False)
+# real_close_values.to_excel(r'C:\Users\disneyactual.xlsx', index=False)
 
 if __name__ == '__main__':
     # Model prediction scoring is saved in the same directory as the images that are tested.
