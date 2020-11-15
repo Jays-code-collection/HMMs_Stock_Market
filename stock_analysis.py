@@ -10,13 +10,11 @@ from pandas_datareader import data
 import matplotlib.pyplot as plt
 from hmmlearn.hmm import GaussianHMM
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, f1_score, jaccard_score
 from tqdm import tqdm
-from docopt import docopt
 import argparse
 import sys
 
-# args = docopt(doc=__doc__, argv=None, help=True,
-#               version=None, options_first=False)
 # Type in python stock_analysis.py --company AAPL, and replace
 # AAPL with your desired stock in your command prompt
 # Supress warning in hmmlearn
@@ -48,9 +46,6 @@ class StockPredictor:
         self._logger.setLevel(logging.DEBUG)
 
     def _split_train_test_data(self, test_size):
-        # TODO: Make dates dynamic entries
-        # start_date = '2017-01-01'  # change the dates here as desired
-        # end_date = '2020-01-01'
         # Use pandas_reader.data.DataReader to load the required financial data. Check if the stock entry is valid.
         try:
             used_data = data.DataReader(self.company, 'yahoo', self.start_date, self.end_date)
@@ -64,8 +59,6 @@ class StockPredictor:
         self._train_data = _train_data
         self._test_data = test_data
         self.days = len(test_data)
-        # TODO: Remove print statement
-        print(self.days)
 
     @staticmethod
     def _extract_features(data):
@@ -107,11 +100,12 @@ class StockPredictor:
             previous_data)
 
         outcome_score = []
+        # Score all possible outcomes and select the most probable one to use for prediction
         for possible_outcome in self._possible_outcomes:
             total_data = np.row_stack(
                 (previous_data_features, possible_outcome))
             outcome_score.append(self.hmm.score(total_data))
-        #  Get the indices of the most probable outcome and return it
+        # Get the index of the most probable outcome and return it
         most_probable_outcome = self._possible_outcomes[np.argmax(
             outcome_score)]
 
@@ -127,21 +121,20 @@ class StockPredictor:
     def predict_close_prices_for_period(self):
         #  Store all the predicted close prices
         predicted_close_prices = []
-        print(self.days)
+        print("Predicting Close prices from " + str(self._test_data.index[0]) + " to " + str(self._test_data.index[-1]))
         for day_index in tqdm(range(self.days)):
             predicted_close_prices.append(self.predict_close_price(day_index))
         return predicted_close_prices
 
     def real_close_prices(self):
         #  Store all the actual close prices
-        actual_close_prices = self._test_data['Close']
+        actual_close_prices = self._test_data.loc[:, ['Close']]
         return actual_close_prices
 
+    # TODO: Add visualisation of results
 
-    # TODO: Add visualisation of results 
 
-
-# TODO: Add if name = main function that takes in all the required arguments using arg parser
+# TODO: Add if name = main function that takes in all the required arguments using arg parser (done)
 # and add in pathways for whether you want visualisation or not. Required arguments will be:
 # output dir, stock name, time period, visualisation y/ n.
 # TODO: Add in functionality to return most recent stock price prediction so people can use it for
@@ -168,13 +161,12 @@ def main():
                                  "predictions for a given day.")
     args = arg_parser.parse_args()
 
-    #C:/Users/Sean/Desktop
-
     # Set variables from arguments
     company_name = args.stock_name
     start = args.start_date
     end = args.end_date
-    out = args.out_dir
+    out_dir = args.out_dir
+
     # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
     if company_name[0] == '\'' and company_name[-1] == '\'':
         company_name = company_name[1:-1]
@@ -182,42 +174,29 @@ def main():
         company_name = company_name[1:]
     elif company_name[-1] == '\'' and company_name[0] != '\'':
         company_name = company_name[:-1]
+    print("Using continuous Hidden Markov Models to predict stock prices for " + str(company_name))
 
-
-    print(company_name)
-    print(start)
-    print(end)
-
-    # Initialise StockPredictor object
+    # Initialise StockPredictor object and fit the HMM
     stock_predictor = StockPredictor(company=company_name, start_date=start, end_date=end)
-
-    # Fit the HMM
     stock_predictor.fit()
+    print("Training data period is from " + str(stock_predictor._train_data.index[0]) + " to " + str(
+        stock_predictor._train_data.index[-1]))
 
-    # Get the predicted stock prices
+    # Get the predicted and actual stock prices and create a DF for saving
     predicted_close = stock_predictor.predict_close_prices_for_period()
-
-    # Get the actual stock prices
     actual_close = stock_predictor.real_close_prices()
+    actual_close["Predicted_Close"] = predicted_close
+    output_df = actual_close.rename(columns={"Close": "Actual_Close"})
 
-    # Save output to CSV as well as specific metrics
-    # TODO: add csv creation and scoring metrics (MAPE etc)
+    # Calculate Mean Squared Error and save
+    actual_arr = (output_df.loc[:, "Actual_Close"]).values
+    pred_arr = (output_df.loc[:, "Predicted_Close"]).values
+    mse = mean_squared_error(actual_arr, pred_arr)
+    out_name = out_dir + '/' + str(company_name) + '_HMM_Prediction_' + str(round(mse, 6)) + '.xlsx'
+    output_df.to_excel(out_name)  # Requires openpyxl installed
+    print("All predictions saved. The Mean Squared Error for the " + str(
+        stock_predictor.days) + " days considered is: " + str(mse))
 
-    start_date = '2017-01-01'  # change the dates here as desired
-    end_date = '2020-01-01'
-
-
-print("hi")
-
-# stock_predictor = StockPredictor(company=args['--company'])
-# stock_predictor.fit()
-# predicted_close = stock_predictor.predict_close_prices_for_period(249, with_plot=False)
-# real_close_values = stock_predictor.actual_close_prices()
-# print(real_close_values)
-# predicted_close_values = pd.DataFrame(predicted_close)
-# print(predicted_close_values)
-# predicted_close_values.to_excel(r'C:\Users\\disneypredicted.xlsx', index=False)
-# real_close_values.to_excel(r'C:\Users\disneyactual.xlsx', index=False)
 
 if __name__ == '__main__':
     # Model prediction scoring is saved in the same directory as the images that are tested.
