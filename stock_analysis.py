@@ -1,5 +1,5 @@
 """
-Usage: stock_analysis.py --company=<company>
+Usage: stock_analysis.py --n=<stock_name> --s<start_date> --e<end_date> --o<out_directory>
 """
 import warnings
 import logging
@@ -10,18 +10,16 @@ from pandas_datareader import data
 import matplotlib.pyplot as plt
 from hmmlearn.hmm import GaussianHMM
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, f1_score, jaccard_score
+from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 import argparse
 import sys
 
-# Type in python stock_analysis.py --company AAPL, and replace
-# AAPL with your desired stock in your command prompt
 # Supress warning in hmmlearn
 warnings.filterwarnings("ignore")
 
 
-class StockPredictor:
+class HMMStockPredictor:
     def __init__(self, company, start_date, end_date, test_size=0.33,
                  n_hidden_states=4, n_latency_days=10,
                  n_intervals_frac_change=50, n_intervals_frac_high=10,
@@ -77,7 +75,7 @@ class StockPredictor:
 
     def fit(self):
         self._logger.info('>>> Extracting Features')
-        observations = StockPredictor._extract_features(self._train_data)
+        observations = HMMStockPredictor._extract_features(self._train_data)
         self._logger.info('Features extraction Completed <<<')
         # Fit the HMM using the fit feature of hmmlearn
         self.hmm.fit(observations)
@@ -96,7 +94,7 @@ class StockPredictor:
         previous_data_start_index = max(0, day_index - self.n_latency_days)
         previous_data_end_index = max(0, day_index - 1)
         previous_data = self._test_data.iloc[previous_data_end_index: previous_data_start_index]
-        previous_data_features = StockPredictor._extract_features(
+        previous_data_features = HMMStockPredictor._extract_features(
             previous_data)
 
         outcome_score = []
@@ -176,8 +174,8 @@ def main():
         company_name = company_name[:-1]
     print("Using continuous Hidden Markov Models to predict stock prices for " + str(company_name))
 
-    # Initialise StockPredictor object and fit the HMM
-    stock_predictor = StockPredictor(company=company_name, start_date=start, end_date=end)
+    # Initialise HMMStockPredictor object and fit the HMM
+    stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end)
     stock_predictor.fit()
     print("Training data period is from " + str(stock_predictor._train_data.index[0]) + " to " + str(
         stock_predictor._train_data.index[-1]))
