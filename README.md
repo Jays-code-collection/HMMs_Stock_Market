@@ -44,6 +44,7 @@ order.
 ## Example
 Input training on and predicting stock prices between January 1st 2020 to February 1st 2020. Typically the model will 
 need to be trained on longer periods for more accurate results but this is purely to have a simple example.
+
 Input:
 ```shell
 python stock_analysis.py -n AAPL -s 2020-01-01 -e 2020-02-02 -o C:\Users\Jay\Test
