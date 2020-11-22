@@ -33,6 +33,9 @@ class HMMStockPredictor:
         self._split_train_test_data(test_size)
         self._compute_all_possible_outcomes(
             n_intervals_frac_change, n_intervals_frac_high, n_intervals_frac_low)
+        self.predicted_close = None
+        self.actual_close = None
+        self.results_df = None
 
     def _init_logger(self):
         self._logger = logging.getLogger(__name__)
@@ -129,12 +132,37 @@ class HMMStockPredictor:
         actual_close_prices = self._test_data.loc[:, ['Close']]
         return actual_close_prices
 
-    # TODO: Add visualisation of results
+
+def plot_results(in_df, out_dir, stock_name):
+    """
+    Plot the actual and predicted stock prices for a given time period and save the results.
+    """
+    in_df = in_df.reset_index()  # Required for plotting
+    ax = plt.gca()
+    in_df.plot(kind='line', x='Date', y='Actual_Close', ax=ax)
+    in_df.plot(kind='line', x='Date', y='Predicted_Close', color='red', ax=ax)
+    plt.ylabel('Daily Close Price (in USD)')
+    plt.title(str(stock_name) + ' daily closing stock prices')
+    save_dir = out_dir + str(stock_name) + 'results_plot' + '.png'
+    plt.savefig(save_dir)
+    plt.show()
+    plt.close('all')
 
 
-# TODO: Add if name = main function that takes in all the required arguments using arg parser (done)
-# and add in pathways for whether you want visualisation or not. Required arguments will be:
-# output dir, stock name, time period, visualisation y/ n.
+def check_bool(v):
+    """
+    Corrects an issue that argparser has in which it treats False inputs for a boolean argument as true.
+    """
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 # TODO: Add in functionality to return most recent stock price prediction so people can use it for
 # a given day
 
@@ -157,13 +185,17 @@ def main():
     arg_parser.add_argument("-o", "--out_dir", required=True, type=str,
                             help="Directory to save the CSV file that contains the actual stock prices along with the "
                                  "predictions for a given day.")
+    arg_parser.add_argument("-p", "--plot", type=check_bool, nargs='?', const=True, default=False,
+                            help="Optional: Boolean flag specifying if the results should be plotted or not.")
     args = arg_parser.parse_args()
 
+    # TODO: make out dir optional, if not entered store in current working directory
     # Set variables from arguments
     company_name = args.stock_name
     start = args.start_date
     end = args.end_date
     out_dir = args.out_dir
+    plot = args.plot
 
     # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
     if company_name[0] == '\'' and company_name[-1] == '\'':
@@ -194,6 +226,10 @@ def main():
     output_df.to_excel(out_name)  # Requires openpyxl installed
     print("All predictions saved. The Mean Squared Error for the " + str(
         stock_predictor.days) + " days considered is: " + str(mse))
+
+    # Plot and save results if plot is True
+    if plot:
+        plot_results(output_df, out_dir, company_name)
 
 
 if __name__ == '__main__':
