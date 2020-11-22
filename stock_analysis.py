@@ -143,7 +143,7 @@ def plot_results(in_df, out_dir, stock_name):
     in_df.plot(kind='line', x='Date', y='Predicted_Close', color='red', ax=ax)
     plt.ylabel('Daily Close Price (in USD)')
     plt.title(str(stock_name) + ' daily closing stock prices')
-    save_dir = out_dir + str(stock_name) + 'results_plot' + '.png'
+    save_dir = out_dir + '/' + str(stock_name) + 'results_plot' + '.png'
     plt.savefig(save_dir)
     plt.show()
     plt.close('all')
