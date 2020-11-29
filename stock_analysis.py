@@ -14,6 +14,9 @@ from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 import argparse
 import sys
+import os
+import time
+from datetime import datetime, timedelta
 
 # Supress warning in hmmlearn
 warnings.filterwarnings("ignore")
@@ -34,8 +37,10 @@ class HMMStockPredictor:
         self._compute_all_possible_outcomes(
             n_intervals_frac_change, n_intervals_frac_high, n_intervals_frac_low)
         self.predicted_close = None
-        self.actual_close = None
-        self.results_df = None
+        self.future_open = []
+        self.future_close = []
+        self.future_dates = []
+        self.days_in_future = 5
 
     def _init_logger(self):
         self._logger = logging.getLogger(__name__)
@@ -56,9 +61,14 @@ class HMMStockPredictor:
         # Do not shuffle the data as it is a time series
         _train_data, test_data = train_test_split(
             used_data, test_size=test_size, shuffle=False)
+        self.train_data = _train_data
+        self.test_data = test_data
 
-        self._train_data = _train_data
-        self._test_data = test_data
+        # Drop the columns that aren't used
+        self.train_data = self.train_data.drop(['Volume', 'Adj Close'], axis=1)
+        self.test_data = self.test_data.drop(['Volume', 'Adj Close'], axis=1)
+
+        # Set days attribute
         self.days = len(test_data)
 
     @staticmethod
@@ -78,7 +88,7 @@ class HMMStockPredictor:
 
     def fit(self):
         self._logger.info('>>> Extracting Features')
-        observations = HMMStockPredictor._extract_features(self._train_data)
+        observations = HMMStockPredictor._extract_features(self.train_data)
         self._logger.info('Features extraction Completed <<<')
         # Fit the HMM using the fit feature of hmmlearn
         self.hmm.fit(observations)
@@ -94,9 +104,10 @@ class HMMStockPredictor:
             frac_change_range, frac_high_range, frac_low_range)))
 
     def _get_most_probable_outcome(self, day_index):
+        # Use the previous n_latency_days worth of data for predictions
         previous_data_start_index = max(0, day_index - self.n_latency_days)
         previous_data_end_index = max(0, day_index - 1)
-        previous_data = self._test_data.iloc[previous_data_end_index: previous_data_start_index]
+        previous_data = self.test_data.iloc[previous_data_end_index: previous_data_start_index]
         previous_data_features = HMMStockPredictor._extract_features(
             previous_data)
 
@@ -114,7 +125,7 @@ class HMMStockPredictor:
 
     def predict_close_price(self, day_index):
         #  Predict the close price using the most_probable_outcome and the open price for a given day
-        open_price = self._test_data.iloc[day_index]['Open']
+        open_price = self.test_data.iloc[day_index]['Open']
         predicted_frac_change, _, _ = self._get_most_probable_outcome(
             day_index)
         return open_price * (1 + predicted_frac_change)
@@ -122,15 +133,32 @@ class HMMStockPredictor:
     def predict_close_prices_for_period(self):
         #  Store all the predicted close prices
         predicted_close_prices = []
-        print("Predicting Close prices from " + str(self._test_data.index[0]) + " to " + str(self._test_data.index[-1]))
+        print("Predicting Close prices from " + str(self.test_data.index[0]) + " to " + str(self.test_data.index[-1]))
         for day_index in tqdm(range(self.days)):
             predicted_close_prices.append(self.predict_close_price(day_index))
+        self.predicted_close = predicted_close_prices
         return predicted_close_prices
 
     def real_close_prices(self):
         #  Store all the actual close prices
-        actual_close_prices = self._test_data.loc[:, ['Close']]
+        actual_close_prices = self.test_data.loc[:, ['Close']]
         return actual_close_prices
+
+    # TODO: Will require some kind of feeding forward of predictions from the last day onwards. I think it will
+    # be easier to append to the original DF, rather than creating an entirely new set of values, based on the
+    # current method used for prediction
+
+    def add_future_days(self):
+        # Add rows to the test data for the future days being predicted. Leave this empty for now as they will be
+        # populated whilst predicting.
+        last_day = self.test_data.index[-1] + timedelta(days=self.days_in_future)
+        future_dates = pd.date_range(self.test_data.index[-1] + pd.offsets.DateOffset(1), last_day)
+        second_df = pd.DataFrame(index=future_dates, columns=['High', 'Low', 'Open', 'Close'])
+        final = pd.concat([self.test_data, second_df])
+        print(final)
+
+    # add 10 days to day_index, add 10 days to test_data, populate the values in these extra 10 rows as each iteration
+    # goes
 
 
 def plot_results(in_df, out_dir, stock_name):
@@ -149,15 +177,15 @@ def plot_results(in_df, out_dir, stock_name):
     plt.close('all')
 
 
-def check_bool(v):
+def check_bool(input):
     """
     Corrects an issue that argparser has in which it treats False inputs for a boolean argument as true.
     """
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if isinstance(input, bool):
+        return input
+    if input.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif input.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
@@ -182,19 +210,22 @@ def main():
     arg_parser.add_argument("-e", "--end_date", required=True, type=str,
                             help="Takes in the end date of the time period being evaluated. Please input dates in the"
                                  "following way: 'year-month-day'")
-    arg_parser.add_argument("-o", "--out_dir", required=True, type=str,
+    arg_parser.add_argument("-o", "--out_dir", type=str, default=None,
                             help="Directory to save the CSV file that contains the actual stock prices along with the "
                                  "predictions for a given day.")
     arg_parser.add_argument("-p", "--plot", type=check_bool, nargs='?', const=True, default=False,
                             help="Optional: Boolean flag specifying if the results should be plotted or not.")
     args = arg_parser.parse_args()
 
-    # TODO: make out dir optional, if not entered store in current working directory
     # Set variables from arguments
     company_name = args.stock_name
     start = args.start_date
     end = args.end_date
-    out_dir = args.out_dir
+    # Use the current working directory for saving if there is no input
+    if args.out_dir is None:
+        out_dir = os.getcwd()
+    else:
+        out_dir = args.out_dir
     plot = args.plot
 
     # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
@@ -209,16 +240,18 @@ def main():
     # Initialise HMMStockPredictor object and fit the HMM
     stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end)
     stock_predictor.fit()
-    print("Training data period is from " + str(stock_predictor._train_data.index[0]) + " to " + str(
-        stock_predictor._train_data.index[-1]))
+    print("Training data period is from " + str(stock_predictor.train_data.index[0]) + " to " + str(
+        stock_predictor.train_data.index[-1]))
 
     # Get the predicted and actual stock prices and create a DF for saving
     predicted_close = stock_predictor.predict_close_prices_for_period()
     actual_close = stock_predictor.real_close_prices()
+    stock_predictor.add_future_days()
     actual_close["Predicted_Close"] = predicted_close
     output_df = actual_close.rename(columns={"Close": "Actual_Close"})
 
     # Calculate Mean Squared Error and save
+    # TODO: put this in a function
     actual_arr = (output_df.loc[:, "Actual_Close"]).values
     pred_arr = (output_df.loc[:, "Predicted_Close"]).values
     mse = mean_squared_error(actual_arr, pred_arr)
@@ -230,6 +263,8 @@ def main():
     # Plot and save results if plot is True
     if plot:
         plot_results(output_df, out_dir, company_name)
+
+    # python stock_analysis.py -n AAPL -s 2020-01-01 -e 2020-01-15 -o C:\Users\Sean\Desktop\Test
 
 
 if __name__ == '__main__':
