@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 
 
 class HMMStockPredictor:
-    def __init__(self, company, start_date, end_date, test_size=0.33,
+    def __init__(self, company, start_date, end_date, future_days, test_size=0.33,
                  n_hidden_states=4, n_latency_days=10,
                  n_intervals_frac_change=50, n_intervals_frac_high=10,
                  n_intervals_frac_low=10):
@@ -37,10 +37,7 @@ class HMMStockPredictor:
         self._compute_all_possible_outcomes(
             n_intervals_frac_change, n_intervals_frac_high, n_intervals_frac_low)
         self.predicted_close = None
-        self.future_open = []
-        self.future_close = []
-        self.future_dates = []
-        self.days_in_future = 5
+        self.days_in_future = future_days
 
     def _init_logger(self):
         self._logger = logging.getLogger(__name__)
@@ -126,7 +123,7 @@ class HMMStockPredictor:
     def predict_close_price(self, day_index):
         #  Predict the close price using the most_probable_outcome and the open price for a given day
         open_price = self.test_data.iloc[day_index]['Open']
-        predicted_frac_change, _, _ = self._get_most_probable_outcome(
+        predicted_frac_change, pred_frac_high, pred_frac_low = self._get_most_probable_outcome(
             day_index)
         return open_price * (1 + predicted_frac_change)
 
@@ -154,8 +151,36 @@ class HMMStockPredictor:
         last_day = self.test_data.index[-1] + timedelta(days=self.days_in_future)
         future_dates = pd.date_range(self.test_data.index[-1] + pd.offsets.DateOffset(1), last_day)
         second_df = pd.DataFrame(index=future_dates, columns=['High', 'Low', 'Open', 'Close'])
-        final = pd.concat([self.test_data, second_df])
-        print(final)
+        self.test_data = pd.concat([self.test_data, second_df])
+
+        # Replace the opening price for the first day in the future with the close prie of the previous day
+        self.test_data.iloc[self.days]['Open'] = self.test_data.iloc[self.days-1]['Close']
+
+    def predict_close_price_fut_days(self, day_index):
+        """ Predict the close prices for the days in the future beyond the available data"""
+        open_price = self.test_data.iloc[day_index]['Open']
+        predicted_frac_change, pred_frac_high, pred_frac_low = self._get_most_probable_outcome(
+            day_index)
+        self.test_data.iloc[day_index]['Close'] = open_price * (1 + predicted_frac_change)
+        self.test_data.iloc[day_index]['High'] = open_price * (1 + pred_frac_high)
+        self.test_data.iloc[day_index]['Low'] = open_price * (1 + pred_frac_low)
+        return open_price * (1 + predicted_frac_change)
+
+    def predict_close_prices_for_future(self):
+        #  Store all the predicted close prices
+        predicted_close_prices = []
+        future_indices = len(self.test_data) - self.days_in_future
+        print("Predicting future Close prices from " + str(self.test_data.index[future_indices]) +
+              " to " + str(self.test_data.index[-1]))
+        for day_index in tqdm(range(future_indices, len(self.test_data))):
+            predicted_close_prices.append(self.predict_close_price_fut_days(day_index))
+            # Handle the last day
+            try:
+                self.test_data.iloc[day_index+1]['Open'] = self.test_data.iloc[day_index]['Close']
+            except IndexError:
+                continue
+        self.predicted_close = predicted_close_prices
+        return predicted_close_prices
 
     # add 10 days to day_index, add 10 days to test_data, populate the values in these extra 10 rows as each iteration
     # goes
@@ -191,12 +216,6 @@ def check_bool(input):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-# TODO: Add in functionality to return most recent stock price prediction so people can use it for
-# a given day
-
-# TODO: Add in functionality so that it uses predicted close prices to predict even further into the
-# future, maybe 10+ days? So, have it predict the final close price, then make that the open price for
-# the next day, and continue! Would need a "days in future" variable too.
 def main():
     # Set up arg_parser to handle inputs
     arg_parser = argparse.ArgumentParser()
@@ -215,12 +234,15 @@ def main():
                                  "predictions for a given day.")
     arg_parser.add_argument("-p", "--plot", type=check_bool, nargs='?', const=True, default=False,
                             help="Optional: Boolean flag specifying if the results should be plotted or not.")
+    arg_parser.add_argument("-f", "--future", type=int, default=None,
+                            help="Optional: Value specifying how far in the future the user would like predictions.")
     args = arg_parser.parse_args()
 
     # Set variables from arguments
     company_name = args.stock_name
     start = args.start_date
     end = args.end_date
+    future = args.future
     # Use the current working directory for saving if there is no input
     if args.out_dir is None:
         out_dir = os.getcwd()
@@ -238,7 +260,7 @@ def main():
     print("Using continuous Hidden Markov Models to predict stock prices for " + str(company_name))
 
     # Initialise HMMStockPredictor object and fit the HMM
-    stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end)
+    stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end, future_days=future)
     stock_predictor.fit()
     print("Training data period is from " + str(stock_predictor.train_data.index[0]) + " to " + str(
         stock_predictor.train_data.index[-1]))
@@ -246,7 +268,6 @@ def main():
     # Get the predicted and actual stock prices and create a DF for saving
     predicted_close = stock_predictor.predict_close_prices_for_period()
     actual_close = stock_predictor.real_close_prices()
-    stock_predictor.add_future_days()
     actual_close["Predicted_Close"] = predicted_close
     output_df = actual_close.rename(columns={"Close": "Actual_Close"})
 
@@ -263,6 +284,18 @@ def main():
     # Plot and save results if plot is True
     if plot:
         plot_results(output_df, out_dir, company_name)
+
+    if future is not None:
+        # Predict for x days into the future
+        stock_predictor.add_future_days()
+        future_pred_close = stock_predictor.predict_close_prices_for_future()
+        print("The predicted stock prices for the next " + str(future) + ' days from '
+              + str(stock_predictor.end_date) + ' are: ', future_pred_close)
+
+        out_final = out_dir + '/' + str(company_name) + 'HMM_Predictions_' + str(future) + '_days_in_future' + '.xlsx'
+        stock_predictor.train_data.to_excel(out_final)  # Requires openpyxl installed
+        print("The full set of predictions has been saved, including the High, Low, Open and Close prices for "
+              + str(future) + " days in the future.")
 
     # python stock_analysis.py -n AAPL -s 2020-01-01 -e 2020-01-15 -o C:\Users\Sean\Desktop\Test
 
