@@ -47,7 +47,6 @@ class HMMStockPredictor:
         handler.setFormatter(formatter)
         self._logger.addHandler(handler)
         self._logger.setLevel(logging.DEBUG)
-        print("test")
 
     def _split_train_test_data(self, test_size):
         """Downloads data and splits it into training and testing datasets."""
