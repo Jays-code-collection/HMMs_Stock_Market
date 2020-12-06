@@ -35,41 +35,55 @@ reference.
 
 ## Usage 
 ```shell
-python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir]
+python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir] [-p T/F] [-f int] [-m T/F]
 ```
 The -n input represents a given stock name, -s is the start date of the period considered, -e is the end date of the period considered 
 and -o takes in the output directory for the excel file produced. It is important that the dates are input in the correct
-order. 
+order. -p is a boolean input that tells the script whether or not to plot the historical dates, it will have no effect if -m is not also set to true. 
+-f stands for future and takes in an integer that determines how many days into the future the user would like to predict. 
+-m stands for metrics, and determines whether or not to predict for the historical data, or just for the future days, if True all of the historical data in the
+test set will be predicted and the Mean Squared Error will be returned. The justification for -m being an optional input is that the model can take quite some time to 
+predict, so it's best if the user has the option to just predict the close prices for x future days quickly as that is the information that many people will find most 
+useful. 
 
 ## Example
-Input training on and predicting stock prices between January 1st 2020 to February 1st 2020. Typically the model will 
-need to be trained on longer periods for more accurate results but this is purely to have a simple example.
+Training on and predicting stock prices between January 1st 2018 to December 5th 2020 (the date that this example was ran on), predicting 5 days into the future. Typically the model will need to be trained on longer periods for more accurate results but this is purely to have a simple example.
 
 Input:
 ```shell
-python stock_analysis.py -n AAPL -s 2020-01-01 -e 2020-02-02 -o C:\Users\Jay\Test
+python stock_analysis.py -n AAPL -s 2018-01-01 -e 2020-12-05 -o C:\Users\Jay\Test -p True -f 5 -m True
 ```
 
 Output:
 ```shell
 Using continuous Hidden Markov Models to predict stock prices for AAPL
-2020-11-22 15:20:29,810 __main__     INFO     >>> Extracting Features
-2020-11-22 15:20:29,811 __main__     INFO     Features extraction Completed <<<
-Training data period is from 2020-01-02 00:00:00 to 2020-01-22 00:00:00
-Predicting Close prices from 2020-01-23 00:00:00 to 2020-01-31 00:00:00
-100%|██████████▍|  7/7 [00:12<00:00,  1.85s/it]
-All predictions saved. The Mean Squared Error for the 7 days considered is: 1.9658745300300378
+Using continuous Hidden Markov Models to predict stock prices for AAPL
+Training data period is from 2018-01-02 00:00:00 to 2019-12-17 00:00:00
+2020-12-06 17:50:11,202 __main__     INFO     >>> Extracting Features
+2020-12-06 17:50:11,203 __main__     INFO     Features extraction Completed <<<
+Predicting Close prices from 2019-12-18 00:00:00 to 2020-12-04 00:00:00
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████| 244/244 [07:54<00:00,  1.94s/it]
+All predictions saved. The Mean Squared Error for the 244 days considered is: 3.7785175769493202
+Predicting future Close prices from 2020-12-05 00:00:00 to 2020-12-09 00:00:00
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:09<00:00,  1.92s/it]
+The predicted stock prices for the next 5 days from 2020-12-05 are:  [122.99846938775511, 123.75152124114953, 124.50918361609536, 125.27148474027554,
+126.0384530141956]
+The full set of predictions has been saved, including the High, Low, Open and Close prices for 5 days in the future.
 ```
 
-Excel file:
+Bottom of Excel file (future predictions:
 
-|          Date         | Actual_Close | Predicted_Close |
-|:---------------------:|:------------:|:---------------:|
-| 2020-01-23   00:00:00 | 79.8075      | 79.96662        |
-| 2020-01-24   00:00:00 | 79.5775      | 80.55268        |
-| 2020-01-27   00:00:00 | 77.2375      | 77.98958        |
-| 2020-01-28   00:00:00 | 79.4225      | 78.62847        |
-| 2020-01-29   00:00:00 | 81.085       | 81.60911        |
-| 2020-01-30   00:00:00 | 80.9675      | 80.62562        |
-| 2020-01-31   00:00:00 | 77.3775      | 80.72372        |
+|          Date         |   High   |    Low   |   Open   |   Close  |
+|:---------------------:|:--------:|:--------:|:--------:|:--------:|
+| 2020-12-03   00:00:00 | 123.78   | 122.21   | 123.52   | 122.94   |
+| 2020-12-04   00:00:00 | 122.86   | 121.52   | 122.6    | 122.25   |
+| 2020-12-05   00:00:00 | 123.6083 | 122.25   | 122.25   | 122.9985 |
+| 2020-12-06   00:00:00 | 124.3651 | 122.9985 | 122.9985 | 123.7515 |
+| 2020-12-07   00:00:00 | 125.1265 | 123.7515 | 123.7515 | 124.5092 |
+| 2020-12-08   00:00:00 | 125.8926 | 124.5092 | 124.5092 | 125.2715 |
+| 2020-12-09   00:00:00 | 126.6634 | 125.2715 | 125.2715 | 126.0385 |
+
+The full table contains all of the test data, in this case from 2019-12-18 to 2020-12-04 as well as the final 5 days in the future, 2020-12-04 to 2020-12-09.
+
+Plot:
 
