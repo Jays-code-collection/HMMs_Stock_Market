@@ -86,4 +86,4 @@ Bottom of Excel file (future predictions:
 The full table contains all of the test data, in this case from 2019-12-18 to 2020-12-04 as well as the final 5 days in the future, 2020-12-04 to 2020-12-09.
 
 Plot:
-
+![plot](AAPLresults_plot.png)
