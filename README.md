@@ -5,7 +5,7 @@ post graduation. At present, the program must be called from a terminal/ command
 an aim to extend it to an interactive site in future, potentially via Django.
 
 ## Motivation
-Hidden Markov Models are an incredibly interesting type of stochastic process that I believe are under utilised in the
+Hidden Markov Models are an incredibly interesting type of stochastic process that are under utilised in the
 Machine Learning world. They are particularly useful for analysing time series. This, combined with their ability to 
 convert the observable outputs that are emitted by real-world processes into predictable and efficient models makes
 them a viable candidate to be used for stock market analysis. The stock market
