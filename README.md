@@ -14,38 +14,6 @@ volatility, time dependence and other similar complex dependencies. HMMs
 are suited to dealing with these complications as the only information they
 require to generate a model is a set of observations (in this case historical stock market data).
 
-## Dependencies
-* Pandas_datareader - Allows one to download data directly from Yahoo finance
-* NumPy - Required for fast manipulation of financial data (e.g. calculating fractional change)
-* Matplotlib - Required for visualisation of results
-* Hmmlearn - Open source package that allows for creation and fitting of HMM's 
-* Sklearn - Used to calculate metrics to score the results and split the data, will be removed in future to reduce dependency
-* Tqdm - Used to track progress whilst training
-* Argparse - Required for console inputs
-
-## Method
-Stock market data is downloaded via pandas_datareader and the data is split into training and testing datasets. The 
-fractional changes for any given day (from open to close, high to open, open to low) in the training dataset are computed and stored in a NumPy 
-array. These fractional changes can be seen as the observations for the HMM and are used to train the continuous HMM 
-with hmmlearn's fit method. The model then predicts the closing price for each day in the training dataset, based on the given 
-days opening price. This prediction is found by calculating the highest scoring potential outcome out of a pre-determined 
-set of outcomes (e.g. +0.001%, -0.001% etc). Finally, all predictions as well as the actual close prices for the testing period are stored in an 
-excel file and the Mean Squared Error between the two is printed out. The MSE is also included in the file name for future 
-reference. 
-
-## Usage 
-```shell
-python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir] [-p T/F] [-f int] [-m T/F]
-```
-The -n input represents a given stock name, -s is the start date of the period considered, -e is the end date of the period considered 
-and -o takes in the output directory for the excel file produced. It is important that the dates are input in the correct
-order. -p is a boolean input that tells the script whether or not to plot the historical dates, it will have no effect if -m is not also set to true. 
--f stands for future and takes in an integer that determines how many days into the future the user would like to predict. 
--m stands for metrics, and determines whether or not to predict for the historical data, or just for the future days, if True all of the historical data in the
-test set will be predicted and the Mean Squared Error will be returned. The justification for -m being an optional input is that the model can take quite some time to 
-predict, so it's best if the user has the option to just predict the close prices for x future days quickly as that is the information that many people will find most 
-useful. 
-
 ## Example
 Training on and predicting stock prices between January 1st 2018 to December 5th 2020 (the date that this example was ran on), predicting 5 days into the future. Typically the model will need to be trained on longer periods for more accurate results but this is purely to have a simple example.
 
@@ -88,3 +56,34 @@ The full table contains all of the test data, in this case from 2019-12-18 to 20
 Plot:
 
 ![plot](AAPLresults_plot.png)
+## Dependencies
+* Pandas_datareader - Allows one to download data directly from Yahoo finance
+* NumPy - Required for fast manipulation of financial data (e.g. calculating fractional change)
+* Matplotlib - Required for visualisation of results
+* Hmmlearn - Open source package that allows for creation and fitting of HMM's 
+* Sklearn - Used to calculate metrics to score the results and split the data, will be removed in future to reduce dependency
+* Tqdm - Used to track progress whilst training
+* Argparse - Required for console inputs
+
+## Method
+Stock market data is downloaded via pandas_datareader and the data is split into training and testing datasets. The 
+fractional changes for any given day (from open to close, high to open, open to low) in the training dataset are computed and stored in a NumPy 
+array. These fractional changes can be seen as the observations for the HMM and are used to train the continuous HMM 
+with hmmlearn's fit method. The model then predicts the closing price for each day in the training dataset, based on the given 
+days opening price. This prediction is found by calculating the highest scoring potential outcome out of a pre-determined 
+set of outcomes (e.g. +0.001%, -0.001% etc). Finally, all predictions as well as the actual close prices for the testing period are stored in an 
+excel file and the Mean Squared Error between the two is printed out. The MSE is also included in the file name for future 
+reference. 
+
+## Usage 
+```shell
+python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir] [-p T/F] [-f int] [-m T/F]
+```
+The -n input represents a given stock name, -s is the start date of the period considered, -e is the end date of the period considered 
+and -o takes in the output directory for the excel file produced. It is important that the dates are input in the correct
+order. -p is a boolean input that tells the script whether or not to plot the historical dates, it will have no effect if -m is not also set to true. 
+-f stands for future and takes in an integer that determines how many days into the future the user would like to predict. 
+-m stands for metrics, and determines whether or not to predict for the historical data, or just for the future days, if True all of the historical data in the
+test set will be predicted and the Mean Squared Error will be returned. The justification for -m being an optional input is that the model can take quite some time to 
+predict, so it's best if the user has the option to just predict the close prices for x future days quickly as that is the information that many people will find most 
+useful. 
