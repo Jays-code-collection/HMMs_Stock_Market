@@ -71,9 +71,9 @@ fractional changes for any given day (from open to close, high to open, open to 
 array. These fractional changes can be seen as the observations for the HMM and are used to train the continuous HMM 
 with hmmlearn's fit method. The model then predicts the closing price for each day in the training dataset, based on the given 
 days opening price. This prediction is found by calculating the highest scoring potential outcome out of a pre-determined 
-set of outcomes (e.g. +0.001%, -0.001% etc). Finally, all predictions as well as the actual close prices for the testing period are stored in an 
+set of outcomes (e.g. +0.001%, -0.001% etc). All predictions as well as the actual close prices for the testing period are stored in an 
 excel file and the Mean Squared Error between the two is printed out. The MSE is also included in the file name for future 
-reference. 
+reference. Future days are predicted by feeding forward the prediction values. Unfortunately, at present there is no method in place to account for overnight/ weekend futures trading, and so for the future predictions the n+1 days open price is the same as the nth days closing price. 
 
 ## Usage 
 ```shell
