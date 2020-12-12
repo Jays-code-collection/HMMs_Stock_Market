@@ -25,7 +25,6 @@ python stock_analysis.py -n AAPL -s 2018-01-01 -e 2020-12-05 -o C:\Users\Jay\Tes
 Output:
 ```shell
 Using continuous Hidden Markov Models to predict stock prices for AAPL
-Using continuous Hidden Markov Models to predict stock prices for AAPL
 Training data period is from 2018-01-02 00:00:00 to 2019-12-17 00:00:00
 2020-12-06 17:50:11,202 __main__     INFO     >>> Extracting Features
 2020-12-06 17:50:11,203 __main__     INFO     Features extraction Completed <<<
