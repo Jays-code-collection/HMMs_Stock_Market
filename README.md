@@ -38,7 +38,7 @@ The predicted stock prices for the next 5 days from 2020-12-05 are:  [122.998469
 The full set of predictions has been saved, including the High, Low, Open and Close prices for 5 days in the future.
 ```
 
-Bottom of Excel file (future predictions:
+Bottom of Excel file (future predictions):
 
 |          Date         |   High   |    Low   |   Open   |   Close  |
 |:---------------------:|:--------:|:--------:|:--------:|:--------:|
