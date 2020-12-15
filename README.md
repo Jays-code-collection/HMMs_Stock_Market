@@ -74,6 +74,14 @@ set of outcomes (e.g. +0.001%, -0.001% etc). All predictions as well as the actu
 excel file and the Mean Squared Error between the two is printed out. The MSE is also included in the file name for future 
 reference. Future days are predicted by feeding forward the prediction values. Unfortunately, at present there is no method in place to account for overnight/ weekend futures trading, and so for the future predictions the n+1 days open price is the same as the nth days closing price. 
 
+## Pre-installation
+
+### Run this on Linux Terminal
+```shell
+sudo apt-get install libopenjp2-7 libtiff5
+pip install -r Requirements.txt
+```
+
 ## Usage 
 ```shell
 python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir] [-p T/F] [-f int] [-m T/F]
