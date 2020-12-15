@@ -75,6 +75,8 @@ excel file and the Mean Squared Error between the two is printed out. The MSE is
 reference. Future days are predicted by feeding forward the prediction values. Unfortunately, at present there is no method in place to account for overnight/ weekend futures trading, and so for the future predictions the n+1 days open price is the same as the nth days closing price. 
 
 ## Installation
+
+### Linux
 ```shell
 sudo apt-get install libopenjp2-7 libtiff5
 pip install -r requirements.txt
