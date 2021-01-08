@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 
 class HMMStockPredictor:
     def __init__(self, company, start_date, end_date, future_days, test_size=0.33,
-                 n_hidden_states=4, n_latency_days=100,
+                 n_hidden_states=4, n_latency_days=10,
                  n_intervals_frac_change=50, n_intervals_frac_high=10,
                  n_intervals_frac_low=10):
         self._init_logger()
@@ -111,10 +111,10 @@ class HMMStockPredictor:
         # Use the previous n_latency_days worth of data for predictions
         previous_data_start_index = max(0, day_index - self.n_latency_days)
         previous_data_end_index = max(0, day_index - 1)
-        previous_data = self.test_data.iloc[previous_data_end_index: previous_data_start_index]
+        previous_data = self.test_data.iloc[previous_data_start_index: previous_data_end_index]
         previous_data_features = HMMStockPredictor._extract_features(
             previous_data)
-
+    
         outcome_score = []
 
         # Score all possible outcomes and select the most probable one to use for prediction
