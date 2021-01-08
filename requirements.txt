@@ -1,0 +1,6 @@
+pandas
+pandas-datareader
+matplotlib
+hmmlearn
+tqdm
+openpyxl
