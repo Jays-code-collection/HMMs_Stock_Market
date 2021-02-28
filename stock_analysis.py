@@ -227,7 +227,7 @@ def plot_results(in_df, out_dir, stock_name):
     in_df.plot(kind='line', x='Date', y='Predicted_Close', color='red', ax=ax)
     plt.ylabel('Daily Close Price (in USD)')
     plt.title(str(stock_name) + ' daily closing stock prices')
-    save_dir = out_dir + '/' + str(stock_name) + 'results_plot' + '.png'
+    save_dir = f"{out_dir}/{stock_name}_results_plot.png"
     plt.savefig(save_dir)
     plt.show()
     plt.close('all')
@@ -330,7 +330,7 @@ def main():
 
         # Calculate Mean Squared Error and save
         mse = calc_mse(output_df)
-        out_name = out_dir + '/' + str(company_name) + '_HMM_Prediction_' + str(round(mse, 6)) + '.xlsx'
+        out_name = f"{out_dir}/{company_name}_HMM_Prediction_{str(round(mse, 6))}.xlsx"
         output_df.to_excel(out_name)  # Requires openpyxl installed
         print("All predictions saved. The Mean Squared Error for the " + str(
             stock_predictor.days) + " days considered is: " + str(mse))
@@ -346,7 +346,7 @@ def main():
         print("The predicted stock prices for the next " + str(future) + ' days from '
               + str(stock_predictor.end_date) + ' are: ', future_pred_close)
 
-        out_final = out_dir + '/' + str(company_name) + '_HMM_Predictions_' + str(future) + '_days_in_future' + '.xlsx'
+        out_final = f"{out_dir}/{company_name}_HMM_Predictions_{future}_days_in_future.xlsx"
         stock_predictor.test_data.to_excel(out_final)  # Requires openpyxl installed
         print("The full set of predictions has been saved, including the High, Low, Open and Close prices for "
               + str(future) + " days in the future.")
