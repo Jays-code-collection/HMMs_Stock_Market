@@ -258,6 +258,48 @@ def calc_mse(input_df):
     return mse
 
 
+def use_stock_predictor(company_name, start, end, future, metrics, plot, out_dir):
+    # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
+    company_name = company_name.strip("\'").strip("\"")
+    print("Using continuous Hidden Markov Models to predict stock prices for " + str(company_name))
+
+    # Initialise HMMStockPredictor object and fit the HMM
+    stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end, future_days=future)
+    print("Training data period is from " + str(stock_predictor.train_data.index[0]) + " to " + str(
+        stock_predictor.train_data.index[-1]))
+    stock_predictor.fit()
+
+    # Get the predicted and actual stock prices and create a DF for saving if you'd like to get a metric for the model
+    if metrics:
+        predicted_close = stock_predictor.predict_close_prices_for_period()
+        actual_close = stock_predictor.real_close_prices()
+        actual_close["Predicted_Close"] = predicted_close
+        output_df = actual_close.rename(columns={"Close": "Actual_Close"})
+
+        # Calculate Mean Squared Error and save
+        mse = calc_mse(output_df)
+        out_name = f"{out_dir}/{company_name}_HMM_Prediction_{str(round(mse, 6))}.xlsx"
+        output_df.to_excel(out_name)  # Requires openpyxl installed
+        print("All predictions saved. The Mean Squared Error for the " + str(
+            stock_predictor.days) + " days considered is: " + str(mse))
+
+        # Plot and save results if plot is True
+        if plot:
+            plot_results(output_df, out_dir, company_name)
+
+    # Predict for x days into the future
+    if future is not None:
+        stock_predictor.add_future_days()
+        future_pred_close = stock_predictor.predict_close_prices_for_future()
+        print("The predicted stock prices for the next " + str(future) + ' days from '
+              + str(stock_predictor.end_date) + ' are: ', future_pred_close)
+
+        out_final = f"{out_dir}/{company_name}_HMM_Predictions_{future}_days_in_future.xlsx"
+        stock_predictor.test_data.to_excel(out_final)  # Requires openpyxl installed
+        print("The full set of predictions has been saved, including the High, Low, Open and Close prices for "
+              + str(future) + " days in the future.")
+
+
 def main():
     # Set up arg_parser to handle inputs
     arg_parser = argparse.ArgumentParser()
@@ -306,50 +348,7 @@ def main():
     else:
         out_dir = args.out_dir
 
-    # Correct incorrect inputs. Inputs should be of the form XXXX, but handle cases when users input 'XXXX'
-    if company_name[0] == '\'' and company_name[-1] == '\'':
-        company_name = company_name[1:-1]
-    elif company_name[0] == '\'' and company_name[-1] != '\'':
-        company_name = company_name[1:]
-    elif company_name[-1] == '\'' and company_name[0] != '\'':
-        company_name = company_name[:-1]
-    print("Using continuous Hidden Markov Models to predict stock prices for " + str(company_name))
-
-    # Initialise HMMStockPredictor object and fit the HMM
-    stock_predictor = HMMStockPredictor(company=company_name, start_date=start, end_date=end, future_days=future)
-    print("Training data period is from " + str(stock_predictor.train_data.index[0]) + " to " + str(
-        stock_predictor.train_data.index[-1]))
-    stock_predictor.fit()
-
-    # Get the predicted and actual stock prices and create a DF for saving if you'd like to get a metric for the model
-    if metrics:
-        predicted_close = stock_predictor.predict_close_prices_for_period()
-        actual_close = stock_predictor.real_close_prices()
-        actual_close["Predicted_Close"] = predicted_close
-        output_df = actual_close.rename(columns={"Close": "Actual_Close"})
-
-        # Calculate Mean Squared Error and save
-        mse = calc_mse(output_df)
-        out_name = f"{out_dir}/{company_name}_HMM_Prediction_{str(round(mse, 6))}.xlsx"
-        output_df.to_excel(out_name)  # Requires openpyxl installed
-        print("All predictions saved. The Mean Squared Error for the " + str(
-            stock_predictor.days) + " days considered is: " + str(mse))
-
-        # Plot and save results if plot is True
-        if plot:
-            plot_results(output_df, out_dir, company_name)
-
-    # Predict for x days into the future
-    if future is not None:
-        stock_predictor.add_future_days()
-        future_pred_close = stock_predictor.predict_close_prices_for_future()
-        print("The predicted stock prices for the next " + str(future) + ' days from '
-              + str(stock_predictor.end_date) + ' are: ', future_pred_close)
-
-        out_final = f"{out_dir}/{company_name}_HMM_Predictions_{future}_days_in_future.xlsx"
-        stock_predictor.test_data.to_excel(out_final)  # Requires openpyxl installed
-        print("The full set of predictions has been saved, including the High, Low, Open and Close prices for "
-              + str(future) + " days in the future.")
+    use_stock_predictor(company_name, start, end, future, metrics, plot, out_dir)
 
 
 if __name__ == '__main__':
