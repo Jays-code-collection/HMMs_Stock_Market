@@ -4,3 +4,4 @@ matplotlib
 hmmlearn
 tqdm
 openpyxl
+pytest
