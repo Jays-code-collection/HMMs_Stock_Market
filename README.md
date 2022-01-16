@@ -94,3 +94,8 @@ order. -p is a boolean input that tells the script whether or not to plot the hi
 test set will be predicted and the Mean Squared Error will be returned. The justification for -m being an optional input is that the model can take quite some time to 
 predict, so it's best if the user has the option to just predict the close prices for x future days quickly as that is the information that many people will find most 
 useful. 
+
+To run tests, use:
+```shell
+python3 -m pytest tests
+```
