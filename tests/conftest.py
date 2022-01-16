@@ -15,15 +15,30 @@ def cleanup(file_type):
 
 
 @pytest.fixture
-def input_args(company_name):
+def valid_start_date():
+    yield "2020-11-01"
+
+
+@pytest.fixture
+def invalid_start_date():
+    yield "2020-13-01"
+
+
+@pytest.fixture
+def valid_end_date():
+    yield "2020-12-05"
+
+
+@pytest.fixture
+def input_args(company_name, valid_start_date, valid_end_date):
     yield [
             "../../stock_analysis",
             "-n",
             company_name,
             "-s",
-            "2020-11-01",
+            valid_start_date,
             "-e",
-            "2020-12-05",
+            valid_end_date,
         ]
 
 
