@@ -288,7 +288,7 @@ def use_stock_predictor(company_name, start, end, future, metrics, plot, out_dir
             plot_results(output_df, out_dir, company_name)
 
     # Predict for x days into the future
-    if future is not None:
+    if future:
         stock_predictor.add_future_days()
         future_pred_close = stock_predictor.predict_close_prices_for_future()
         print("The predicted stock prices for the next " + str(future) + ' days from '
@@ -339,7 +339,7 @@ def main():
     # Handle empty input case
     if not metrics and future is None:
         print("No outputs selected as both historical predictions and future predictions are empty/None. Please repeat "
-              "your inputs with a boolean value for -h, or an integer value for -f, or both.")
+              "your inputs with a boolean value for -m, or an integer value for -f, or both.")
         sys.exit()
 
     # Use the current working directory for saving if there is no input
