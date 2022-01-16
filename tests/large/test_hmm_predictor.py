@@ -1,6 +1,5 @@
 import pytest
 import os
-import mock
 import sys
 from unittest.mock import patch
 
