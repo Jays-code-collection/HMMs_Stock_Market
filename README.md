@@ -54,7 +54,7 @@ The full table contains all of the test data, in this case from 2019-12-18 to 20
 
 Plot:
 
-![plot](AAPLresults_plot.png)
+![plot](images/AAPLresults_plot.png)
 ## Dependencies
 * Pandas_datareader - Allows one to download data directly from Yahoo finance
 * NumPy - Required for fast manipulation of financial data (e.g. calculating fractional change)
