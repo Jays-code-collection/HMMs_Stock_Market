@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  stock_analysis:
+    container_name: stock_analysis
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workarea
+    
+
+  tests:
+    container_name: tests
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /workarea
+    command: python3 -m pytest tests/
