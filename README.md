@@ -83,6 +83,7 @@ pip install -r requirements.txt
 ```
 
 ## Usage 
+Within the src directory:
 ```shell
 python stock_analysis.py [-n XXXX] [-s yyyy-mm-dd] [-e yyyy-mm-dd] [-o dir] [-p T/F] [-f int] [-m T/F]
 ```
@@ -98,4 +99,9 @@ useful.
 To run tests, use:
 ```shell
 python3 -m pytest tests
+```
+
+To run tests using docker, use:
+```shell
+docker-compose up tests
 ```
