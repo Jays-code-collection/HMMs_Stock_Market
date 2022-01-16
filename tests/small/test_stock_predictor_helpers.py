@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 sys.path.append("../../")
-import stock_analysis
+from src import stock_analysis
 
 
 @pytest.mark.small

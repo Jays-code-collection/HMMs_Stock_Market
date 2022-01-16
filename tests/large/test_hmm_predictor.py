@@ -4,7 +4,7 @@ import sys
 from unittest.mock import patch
 
 sys.path.append("../../")
-import stock_analysis
+from src import stock_analysis
 
 
 @pytest.mark.large

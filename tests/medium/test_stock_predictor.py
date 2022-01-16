@@ -1,8 +1,9 @@
 import pytest
 import sys
 
+print(sys.path)
 sys.path.append("../../")
-import stock_analysis
+from src import stock_analysis
 
 
 @pytest.mark.medium
